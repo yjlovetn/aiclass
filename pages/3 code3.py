@@ -18,13 +18,13 @@ def to_markdown(text):
     text = text.replace('•', '*')
     return textwrap.indent(text, '> ', predicate=lambda _: True)
 
-# few-shot 프롬프트 구성 함수 수정
-def try_generate_content(api_key, prompt):
+# 호르몬 특징을 생성하는 함수
+def try_generate_content(api_key, hormone):
     # API 키를 설정
     genai.configure(api_key=api_key)
    
     # 설정된 모델 변경
-    model = genai.GenerativeModel(model_name="gemini-1.0-pro",
+    model = genai.GenerativeModel(model_name="gemini-1.5-flash",
                                   generation_config={
                                       "temperature": 0.9,
                                       "top_p": 1,
@@ -39,6 +39,7 @@ def try_generate_content(api_key, prompt):
                                   ])
     try:
         # 콘텐츠 생성 시도
+        prompt = f"{hormone} 호르몬의 특징에 대해 설명해 주세요."
         response = model.generate_content(prompt)
         return response.text
     except Exception as e:
@@ -46,35 +47,19 @@ def try_generate_content(api_key, prompt):
         print(f"API 호출 실패: {e}")
         return None
 
-st.title("체세포 분열 단계 퀴즈 🧬")
+st.title("호르몬 특징 공부하기 📚")
 
-st.write("체세포 분열의 단계를 올바른 순서대로 나열해 보세요.")
+st.write("호르몬의 종류를 입력하면 해당 호르몬의 특징을 알려줍니다.")
 
-# 단계 설명
-steps = {
-    "전기": "핵막이 사라지고 염색체가 응축되어 나타납니다.",
-    "중기": "염색체가 세포 중앙에 배열됩니다.",
-    "후기": "염색 분체가 나뉘어 양극으로 이동합니다.",
-    "말기": "응축되어 있던 염색체가 풀리고 핵막이 생깁니다.",
-    "세포질 분열": "세포질이 분열되어 두 개의 딸세포가 만들어집니다."
-}
+hormone = st.text_input("호르몬 이름을 입력하세요:")
 
-# 단계 순서
-correct_order = ["전기", "중기", "후기", "말기", "세포질 분열"]
-
-# 단계 설명을 표시
-st.write("체세포 분열의 각 단계에 대한 설명입니다:")
-for step, description in steps.items():
-    st.markdown(f"### {step}")
-    st.markdown(to_markdown(description))
-
-st.write("단계를 올바른 순서로 나열해 보세요.")
-
-# 사용자 입력
-user_order = [st.selectbox(f"단계 {i+1}", list(steps.keys()), key=i) for i in range(5)]
-
-if st.button("제출"):
-    if user_order == correct_order:
-        st.success("정답입니다! 체세포 분열의 단계를 올바르게 나열했습니다.")
+if st.button("설명 보기"):
+    if hormone:
+        explanation = try_generate_content(api_key, hormone)
+        
+        if explanation:
+            st.markdown(to_markdown(explanation))
+        else:
+            st.error("특징을 생성하는 데 실패했습니다. 다시 시도해 주세요.")
     else:
-        st.error("틀렸습니다. 다시 시도해 보세요.")
+        st.warning("호르몬 이름을 입력해 주세요.")
